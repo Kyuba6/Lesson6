@@ -1,3 +1,4 @@
+import sys
 from src.manager import Manager
 from src.models import Parameters
 
@@ -63,11 +64,25 @@ def display_tenants(manager):
                 print(f"      • {format_currency(transfer.amount_pln):>15}  Date: {transfer.date}  Period: {month_year}")
 
 
-if __name__ == '__main__':
-    parameters = Parameters()
-    manager = Manager(parameters)
+if __name__ == "__main__":
+    if len(sys.argv) != 4:
+        print("Użycie: python main.py <apartment_key> <year> <month>")
+        sys.exit(1)
 
-    display_apartments(manager)
-    display_tenants(manager)
+    apartment_key = sys.argv[1]
+    year = int(sys.argv[2])
+    month = int(sys.argv[3])
+
+    manager = Manager(Parameters())
+
+    print(f"\nRozliczenie dla: {apartment_key}, {year}-{month:02d}")
+    print("=" * 50)
+
+    debtors = manager.get_debtors(apartment_key, year, month)
+    print("\nDłużnicy:")
+    for d in debtors:
+        print(" -", d)
+
+    tax = manager.get_tax(year, month, 0.085)
+    print("\nPodatek (8.5%):", tax, "PLN")
     
-    print(f"\n{'=' * 70}\n")
