@@ -107,7 +107,24 @@ class Manager:
         return sum(
             t.amount_pln
             for t in self.transfers
-            if t.tenant == tenant_key and t.settlement_year == year and t.settlement_month == month
+            if t.tenant == tenant_key == year
+            and t.settlement_year == year
+            and t.settlement_month == month    
         )
+    
+    
+    def get_debtors(self, apartment_key: str, year: int, month: int) -> list[str]:
+        debtors = []
 
+        for tenant_key, tenant in self.tenants.items():
+            if tenant.apartment != apartment_key:
+                continue
+
+            transfers = self.get_tenant_transfers(tenant_key, year, month)
+            rent = tenant.rent_pln
+
+            if transfers < rent:
+                debtors.append(tenant.name)
+
+        return debtors
 
