@@ -120,3 +120,16 @@ def test_tenants_settlements_creation():
     tenants_settlements = manager.create_tenants_settlements(apartment_settlement)
     assert isinstance(tenants_settlements, list)
     assert len(tenants_settlements) == 0
+
+def test_transfers_and_balance():
+    manager = Manager(Parameters())
+    settlement = manager.get_settlement("apart-polanka", 2025, 1)
+
+    apartment_transfers = manager.get_apartment_transfers("apart-polanka", 2025, 1)
+    assert apartment_transfers == 7500.0
+
+    tenants_settlements = manager.create_tenants_settlements(settlement)
+
+    for ts in tenants_settlements:
+        assert ts.total_transfers_pln == 2500.0
+        assert ts.balance_pln == 2500.0 - ts.total_due_pln

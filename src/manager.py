@@ -43,32 +43,71 @@ class Manager:
         total_cost = self.get_apartment_costs(apartment_key, year, month)
         if total_cost is None:
             return None
-        
-        return ApartmentSettlement(
+
+        settlement = ApartmentSettlement(
             key=f"{apartment_key}-{year}-{month}",
             apartment=apartment_key,
             year=year,
             month=month,
             total_due_pln=total_cost
         )
+
+        settlement.total_transfers_pln = self.get_apartment_transfers(apartment_key, year, month)
+
+        settlement.balance_pln = settlement.total_transfers_pln - settlement.total_due_pln
+        return settlement
     
     def create_tenants_settlements(self, apartment_settlement: ApartmentSettlement) -> List[TenantSettlement] | None:
         if apartment_settlement.month < 1 or apartment_settlement.month > 12:
             raise ValueError("Month must be between 1 and 12")
         if apartment_settlement.apartment not in self.apartments:
             return None
-        tenants_in_apartment = [tenant for tenant in self.tenants.values() if tenant.apartment == apartment_settlement.apartment]
+
+        tenants_in_apartment = [
+            (tenant_key, tenant)
+            for tenant_key, tenant in self.tenants.items()
+            if tenant.apartment == apartment_settlement.apartment
+        ]
+
         if not tenants_in_apartment:
             return []
-        
-        return [
-            TenantSettlement(
+
+        per_tenant_due = apartment_settlement.total_due_pln / len(tenants_in_apartment)
+        settlements = []
+
+        for tenant_key, tenant in tenants_in_apartment:
+            ts = TenantSettlement(
                 tenant=tenant.name,
                 apartment_settlement=apartment_settlement.key,
                 month=apartment_settlement.month,
                 year=apartment_settlement.year,
-                total_due_pln=apartment_settlement.total_due_pln / len(tenants_in_apartment)
+                total_due_pln=per_tenant_due
             )
-        for tenant in tenants_in_apartment ] 
+
+            ts.total_transfers_pln = self.get_tenant_transfers(
+                tenant_key,
+                apartment_settlement.year,
+                apartment_settlement.month
+            )
+            ts.balance_pln = ts.total_transfers_pln - ts.total_due_pln
+            settlements.append(ts)
+        return settlements
+ 
     
+    def get_apartment_transfers(self, apartment_key: str, year: int, month: int) -> float:
+        total = 0.0
+        for transfer in self.transfers:
+            tenant = self.tenants.get(transfer.tenant)
+            if tenant and tenant.apartment == apartment_key:
+                if transfer.settlement_year == year and transfer.settlement_month == month:
+                    total += transfer.amount_pln
+        return total
     
+    def get_tenant_transfers(self, tenant_key: str, year: int, month: int) -> float:
+        return sum(
+            t.amount_pln
+            for t in self.transfers
+            if t.tenant == tenant_key and t.settlement_year == year and t.settlement_month == month
+        )
+
+
