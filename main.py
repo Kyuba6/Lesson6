@@ -85,3 +85,4 @@ if __name__ == "__main__":
 
     tax = manager.get_tax(year, month, 0.085)
     print("\nPodatek (8.5%):", tax, "PLN")
+    
