@@ -127,4 +127,13 @@ class Manager:
                 debtors.append(tenant.name)
 
         return debtors
+    
+    def get_tax(self, year: int, month: int, tax_rate: float) -> int:
+        total_income = sum(
+            t.amount_pln
+            for t in self.transfers
+            if t.settlement_year == year and t.settlement_month == month
+        )
 
+        tax = total_income * tax_rate
+        return round(tax)
